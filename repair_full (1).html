@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบแจ้งซ่อมวัสดุอุปกรณ์ - วิทยาลัยเทคนิคประจวบคีรีขันธ์</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#1a2a5e; --bg:#f4f5f9; --white:#fff;
+  --border:#e0e2ea; --text:#1c1e2b; --muted:#6b7280; --hint:#9ca3af;
+  --danger:#c0392b; --success:#27ae60;
+  --warn-bg:#faeeda; --warn-text:#854f0b;
+  --info-bg:#e6f1fb; --info-text:#185fa5;
+  --ok-bg:#eaf3de;  --ok-text:#3b6d11;
+  --gray-bg:#f1efe8;--gray-text:#5f5e5a;
+  --radius:12px; --rsm:8px;
+}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;min-height:100vh;}
+.screen{display:none;}
+.screen.active{display:flex;flex-direction:column;min-height:100vh;}
+
+/* LOGIN */
+#sc-login{background:linear-gradient(145deg,#1a2a5e 0%,#2e4499 100%);align-items:center;justify-content:center;padding:1.5rem;}
+.login-card{background:#fff;border-radius:18px;padding:2.25rem 2rem;width:100%;max-width:380px;box-shadow:0 12px 40px rgba(0,0,0,.22);}
+.login-head{text-align:center;margin-bottom:1.5rem;}
+.login-head .iw{width:66px;height:66px;background:#e8ecf7;border-radius:16px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px;}
+.login-head .iw i{font-size:34px;color:var(--navy);}
+.login-head h1{font-size:17px;font-weight:600;}
+.login-head p{font-size:12px;color:var(--muted);margin-top:4px;}
+.login-tabs{display:flex;border:1.5px solid var(--border);border-radius:var(--rsm);overflow:hidden;margin-bottom:1.25rem;}
+.ltab{flex:1;padding:9px;font-size:14px;text-align:center;cursor:pointer;color:var(--muted);background:#fafafa;border:none;font-family:'Sarabun',sans-serif;transition:all .15s;}
+.ltab.active{background:var(--navy);color:#fff;font-weight:500;}
+.err{font-size:13px;color:var(--danger);margin-top:8px;text-align:center;display:none;}
+
+/* FORM ELEMENTS */
+.field{margin-bottom:.9rem;}
+.field label{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-bottom:5px;}
+.req{color:var(--danger);margin-left:2px;}
+.field input,.field select,.field textarea{width:100%;padding:10px 13px;font-size:14px;font-family:'Sarabun',sans-serif;border:1.5px solid var(--border);border-radius:var(--rsm);background:#fafafa;color:var(--text);transition:border-color .15s,box-shadow .15s;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,42,94,.1);background:#fff;}
+.field textarea{resize:vertical;min-height:100px;line-height:1.65;}
+.field input:disabled,.field select:disabled{background:#f0f3ff;color:var(--navy);font-weight:500;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;font-size:14px;font-weight:500;font-family:'Sarabun',sans-serif;border-radius:var(--rsm);border:none;cursor:pointer;transition:opacity .15s,transform .1s;}
+.btn:active{transform:scale(.98);}
+.btn-primary{background:var(--navy);color:#fff;}
+.btn-primary:hover{opacity:.88;}
+.btn-block{width:100%;justify-content:center;}
+.btn-outline{background:transparent;color:var(--navy);border:1.5px solid var(--navy);}
+.btn-outline:hover{background:#f0f3ff;}
+.btn-sm{padding:6px 13px;font-size:13px;}
+.btn-green{background:var(--success);color:#fff;}
+.btn-green:hover{opacity:.88;}
+
+/* HEADER */
+.app-header{background:var(--navy);height:58px;padding:0 1.25rem;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;box-shadow:0 2px 10px rgba(0,0,0,.2);flex-shrink:0;}
+.app-header .lbox{width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.app-header .lbox i{font-size:20px;color:#fff;}
+.app-header .ht{font-size:15px;font-weight:600;color:#fff;}
+.app-header .hs{font-size:11px;color:rgba(255,255,255,.65);}
+.spacer{flex:1;}
+.user-pill{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.13);padding:6px 12px;border-radius:99px;font-size:13px;color:rgba(255,255,255,.9);cursor:pointer;}
+
+/* CARDS */
+.wrap{max-width:640px;width:100%;margin:0 auto;padding:1.5rem 1rem 2.5rem;}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1rem;}
+.card-title{font-size:14px;font-weight:600;color:var(--muted);margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.card-title i{font-size:17px;color:var(--navy);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:1.75rem 1rem;text-align:center;cursor:pointer;background:#fafafa;transition:border-color .15s,background .15s;}
+.upload-zone:hover{border-color:var(--navy);background:#f0f3ff;}
+.upload-zone i{font-size:32px;color:var(--hint);display:block;margin-bottom:6px;}
+.upload-zone .ut{font-size:14px;font-weight:500;color:var(--muted);}
+.upload-zone .us{font-size:12px;color:var(--hint);margin-top:3px;}
+.preview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:8px;margin-top:12px;}
+.prev-item{position:relative;}
+.prev-item img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--rsm);border:1px solid var(--border);display:block;}
+.prev-item .del{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--danger);color:#fff;border:none;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+/* SUCCESS */
+.success-wrap{text-align:center;padding:2rem 1rem;}
+.check-circle{width:74px;height:74px;background:var(--ok-bg);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;}
+.check-circle i{font-size:40px;color:var(--success);}
+.success-wrap h2{font-size:20px;font-weight:600;}
+.tid-box{display:inline-block;font-size:26px;font-weight:700;color:var(--navy);background:#e8ecf7;border-radius:var(--rsm);padding:6px 22px;margin:12px 0;letter-spacing:.05em;}
+.note{font-size:14px;color:var(--muted);max-width:300px;margin:0 auto 1.25rem;}
+.sum-box{background:var(--bg);border-radius:var(--radius);padding:1rem 1.25rem;text-align:left;margin-bottom:1.25rem;}
+.sum-row{display:flex;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px solid var(--border);}
+.sum-row:last-child{border-bottom:none;}
+.sl{width:110px;flex-shrink:0;font-weight:500;color:var(--muted);}
+.sv{color:var(--text);}
+
+/* BADGE */
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:500;white-space:nowrap;}
+.b-pending{background:var(--warn-bg);color:var(--warn-text);}
+.b-progress{background:var(--info-bg);color:var(--info-text);}
+.b-done{background:var(--ok-bg);color:var(--ok-text);}
+.b-cancel{background:var(--gray-bg);color:var(--gray-text);}
+.b-high{background:#fce8e8;color:#9b1c1c;}
+.b-medium{background:var(--warn-bg);color:var(--warn-text);}
+.b-low{background:var(--ok-bg);color:var(--ok-text);}
+
+/* ADMIN */
+.admin-wrap{padding:1.5rem;}
+.page-title{font-size:19px;font-weight:600;margin-bottom:1.25rem;display:flex;align-items:center;gap:8px;}
+.page-title i{color:var(--navy);}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.25rem;}
+.sc{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.1rem;display:flex;align-items:center;gap:12px;}
+.si{width:40px;height:40px;border-radius:var(--rsm);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.si i{font-size:20px;}
+.sn{font-size:24px;font-weight:600;line-height:1;}
+.slb{font-size:12px;color:var(--muted);margin-top:2px;}
+.search-row{display:flex;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:.75rem 1rem;margin-bottom:1rem;align-items:center;}
+.search-row input,.search-row select{border:1px solid var(--border);border-radius:var(--rsm);padding:7px 12px;font-size:13px;font-family:'Sarabun',sans-serif;color:var(--text);background:var(--bg);}
+.search-row input{flex:1;min-width:160px;}
+.search-row input:focus,.search-row select:focus{outline:none;border-color:var(--navy);}
+.tbl-wrap{background:#fff;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.adm-table{width:100%;border-collapse:collapse;font-size:13px;min-width:880px;}
+.adm-table thead tr{background:var(--bg);}
+.adm-table th{padding:10px 14px;text-align:left;font-size:12px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+.adm-table td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.adm-table tbody tr:last-child td{border-bottom:none;}
+.adm-table tbody tr:hover{background:#f8f9ff;}
+.rep-name{font-weight:500;color:var(--text);}
+.rep-phone{font-size:12px;color:var(--muted);}
+.row-actions{display:flex;gap:6px;}
+.empty{text-align:center;padding:3rem;color:var(--hint);}
+.empty i{font-size:44px;display:block;margin-bottom:10px;}
+
+/* DETAIL PANEL */
+.detail-panel{background:#fff;border:1px solid var(--border);border-left:4px solid var(--navy);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-top:1rem;}
+.dp-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;margin-bottom:1rem;}
+.di .dl{font-size:12px;color:var(--muted);margin-bottom:2px;}
+.di .dv{font-size:14px;color:var(--text);}
+.desc-box{background:var(--bg);border-radius:var(--rsm);padding:10px 14px;font-size:14px;line-height:1.65;}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:#fff;border-radius:var(--radius);padding:1.5rem;width:460px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;}
+.modal-head h3{font-size:16px;font-weight:600;}
+.modal-head button{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;z-index:1000;background:#1e3a5f;color:#fff;padding:12px 18px;border-radius:var(--radius);font-size:14px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 18px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:transform .3s,opacity .3s;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* TRACK STATUS */
+.track-search-box{display:flex;gap:8px;margin-bottom:1.25rem;}
+.track-search-box input{flex:1;padding:11px 15px;font-size:14px;font-family:'Sarabun',sans-serif;border:1.5px solid var(--border);border-radius:var(--rsm);background:#fafafa;color:var(--text);}
+.track-search-box input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,42,94,.1);}
+.ticket-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.25rem;margin-bottom:.75rem;cursor:pointer;transition:box-shadow .15s,border-color .15s;}
+.ticket-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);border-color:#c0c8e8;}
+.tc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;}
+.tc-id{font-weight:700;color:var(--navy);font-size:15px;}
+.tc-meta{font-size:12px;color:var(--muted);margin-top:3px;}
+.tc-title{font-weight:500;font-size:14px;margin-bottom:4px;}
+.tc-desc{font-size:13px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.timeline{margin-top:1rem;padding-left:.5rem;}
+.tl-item{display:flex;gap:12px;padding-bottom:1rem;position:relative;}
+.tl-item:last-child{padding-bottom:0;}
+.tl-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.tl-dot i{font-size:14px;}
+.tl-dot.done{background:var(--ok-bg);color:var(--ok-text);}
+.tl-dot.active{background:var(--info-bg);color:var(--info-text);}
+.tl-dot.wait{background:var(--bg);color:var(--hint);border:1.5px dashed var(--border);}
+.tl-line{position:absolute;left:13px;top:30px;bottom:0;width:2px;background:var(--border);}
+.tl-item:last-child .tl-line{display:none;}
+.tl-content{flex:1;}
+.tl-label{font-size:14px;font-weight:500;}
+.tl-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.track-detail-card{background:#fff;border:1px solid var(--border);border-left:4px solid var(--navy);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1rem;display:none;}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--navy);background:none;border:none;cursor:pointer;padding:0;margin-bottom:1rem;font-family:'Sarabun',sans-serif;font-weight:500;}
+.back-btn:hover{text-decoration:underline;}
+.no-result{text-align:center;padding:2.5rem 1rem;color:var(--hint);}
+.no-result i{font-size:44px;display:block;margin-bottom:10px;}
+
+@media(max-width:600px){
+  .form-row{grid-template-columns:1fr;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .wrap,.admin-wrap{padding:1rem .75rem 2rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!--  SCREEN 1 : LOGIN                                            -->
+<!-- ============================================================ -->
+<div id="sc-login" class="screen active">
+  <div class="login-card">
+    <div class="login-head">
+      <div class="iw"><i class="ti ti-tool"></i></div>
+      <h1>ระบบแจ้งซ่อมวัสดุอุปกรณ์</h1>
+      <p>วิทยาลัยเทคนิคประจวบคีรีขันธ์</p>
+    </div>
+
+    <div class="login-tabs">
+      <button class="ltab active" onclick="setMode('user',this)">ผู้ใช้งาน</button>
+      <button class="ltab" onclick="setMode('admin',this)">ผู้ดูแลระบบ</button>
+    </div>
+
+    <!-- ฟิลด์ผู้ใช้ -->
+    <div id="user-fields">
+      <div class="field">
+        <label>ชื่อ-นามสกุล <span class="req">*</span></label>
+        <input type="text" id="u-name" placeholder="กรอกชื่อ-นามสกุล">
+      </div>
+      <div class="field">
+        <label>แผนก / งาน <span class="req">*</span></label>
+        <select id="u-dept">
+          <option value="">-- เลือกแผนก --</option>
+          <option>แผนกวิชาช่างยนต์</option>
+          <option>แผนกวิชาช่างกลโรงงาน</option>
+          <option>แผนกวิชาช่างเชื่อมโลหะ</option>
+          <option>แผนกวิชาช่างไฟฟ้ากำลัง</option>
+          <option>แผนกวิชาช่างอิเล็กทรอนิกส์</option>
+          <option>แผนกวิชาช่างก่อสร้าง</option>
+          <option>แผนกวิชาช่างสถาปัตยกรรม</option>
+          <option>แผนกวิชาคอมพิวเตอร์ธุรกิจ</option>
+          <option>แผนกวิชาการบัญชี</option>
+          <option>แผนกวิชาการตลาด</option>
+          <option>แผนกวิชาการท่องเที่ยว</option>
+          <option>งานทะเบียน</option>
+          <option>งานวิชาการ</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>เบอร์โทร / เบอร์ต่อ</label>
+        <input type="text" id="u-phone" placeholder="032-611234 ต่อ 105">
+      </div>
+    </div>
+
+    <!-- ฟิลด์ admin -->
+    <div id="admin-fields" style="display:none">
+      <div class="field">
+        <label>Username</label>
+        <input type="text" id="a-user" placeholder="admin">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="a-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <p style="font-size:12px;color:var(--hint);margin-top:-4px">
+        ค่าเริ่มต้น: username = <b>admin</b> / password = <b>admin1234</b>
+      </p>
+    </div>
+
+    <div class="err" id="login-err">กรุณากรอกข้อมูลให้ครบ</div>
+
+    <div style="margin-top:1.25rem">
+      <button class="btn btn-primary btn-block" onclick="doLogin()">
+        <i class="ti ti-login"></i> เข้าสู่ระบบ
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!--  SCREEN 2 : USER FORM                                        -->
+<!-- ============================================================ -->
+<div id="sc-form" class="screen">
+  <header class="app-header">
+    <div class="lbox"><i class="ti ti-tool"></i></div>
+    <div>
+      <div class="ht">แจ้งซ่อมวัสดุอุปกรณ์</div>
+      <div class="hs">วิทยาลัยเทคนิคประจวบคีรีขันธ์</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="user-pill" onclick="logout()">
+      <i class="ti ti-user-circle"></i>
+      <span id="hd-name">-</span>
+      <i class="ti ti-logout" style="font-size:14px;opacity:.7"></i>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- ข้อมูลผู้แจ้ง (read-only) -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-user-check"></i> ข้อมูลผู้แจ้ง</div>
+      <div class="form-row">
+        <div class="field">
+          <label>ชื่อผู้แจ้ง</label>
+          <input type="text" id="d-name" disabled>
+        </div>
+        <div class="field">
+          <label>แผนก / งาน</label>
+          <input type="text" id="d-dept" disabled>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>เบอร์โทร / เบอร์ต่อ</label>
+        <input type="text" id="d-phone" disabled>
+      </div>
+    </div>
+
+    <!-- รายละเอียดอุปกรณ์ -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-clipboard-text"></i> รายละเอียดอุปกรณ์</div>
+      <div class="field">
+        <label>ชื่ออุปกรณ์ / ครุภัณฑ์ <span class="req">*</span></label>
+        <input type="text" id="f-equip" placeholder="เช่น คอมพิวเตอร์ Dell ห้อง 203">
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>ประเภทอุปกรณ์</label>
+          <select id="f-type">
+            <option value="">-- เลือกประเภท --</option>
+            <option>คอมพิวเตอร์และอุปกรณ์</option>
+            <option>เครื่องมือช่าง</option>
+            <option>เฟอร์นิเจอร์และสำนักงาน</option>
+            <option>ระบบไฟฟ้าและประปา</option>
+            <option>ยานพาหนะ</option>
+            <option>อื่นๆ</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>ระดับความเร่งด่วน</label>
+          <select id="f-priority">
+            <option value="low">ปกติ</option>
+            <option value="medium">ด่วน</option>
+            <option value="high">เร่งด่วนมาก</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>อาการเสีย / รายละเอียดปัญหา <span class="req">*</span></label>
+        <textarea id="f-desc" placeholder="อธิบายอาการเสีย สาเหตุเบื้องต้น หรือประวัติการซ่อม (ถ้ามี)"></textarea>
+      </div>
+    </div>
+
+    <!-- รูปภาพ -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-photo"></i> รูปภาพประกอบ (ถ้ามี)</div>
+      <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+        <i class="ti ti-cloud-upload"></i>
+        <div class="ut">คลิกเพื่อเลือกรูปภาพ หรือลากวางไฟล์ที่นี่</div>
+        <div class="us">รองรับ JPG, PNG — สูงสุด 5 ภาพ</div>
+      </div>
+      <input type="file" id="file-input" multiple accept="image/*"
+             onchange="handleImg(event)" style="display:none">
+      <div class="preview-grid" id="preview-grid"></div>
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="submitForm()">
+      <i class="ti ti-send"></i> ส่งคำร้องแจ้งซ่อม
+    </button>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!--  SCREEN 3 : SUCCESS                                          -->
+<!-- ============================================================ -->
+<div id="sc-success" class="screen">
+  <header class="app-header">
+    <div class="lbox"><i class="ti ti-tool"></i></div>
+    <div>
+      <div class="ht">แจ้งซ่อมวัสดุอุปกรณ์</div>
+      <div class="hs">วิทยาลัยเทคนิคประจวบคีรีขันธ์</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="user-pill" onclick="logout()">
+      <i class="ti ti-logout" style="font-size:14px"></i> ออกจากระบบ
+    </div>
+  </header>
+  <div class="wrap">
+    <div class="card">
+      <div class="success-wrap">
+        <div class="check-circle"><i class="ti ti-circle-check"></i></div>
+        <h2>ส่งคำร้องเรียบร้อยแล้ว!</h2>
+        <div class="tid-box" id="s-tid"></div>
+        <p class="note">เจ้าหน้าที่จะตรวจสอบและดำเนินการซ่อมแซมโดยเร็ว</p>
+        <div class="sum-box" id="s-sum"></div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="goNewForm()">
+            <i class="ti ti-plus"></i> แจ้งซ่อมรายการใหม่
+          </button>
+          <button class="btn btn-outline" onclick="goTrack()">
+            <i class="ti ti-map-search"></i> ติดตามสถานะ
+          </button>
+          <button class="btn btn-outline" onclick="logout()">
+            <i class="ti ti-logout"></i> ออกจากระบบ
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!--  SCREEN 4 : ADMIN                                            -->
+<!-- ============================================================ -->
+<div id="sc-admin" class="screen">
+  <header class="app-header">
+    <div class="lbox"><i class="ti ti-shield-check"></i></div>
+    <div>
+      <div class="ht">Admin Panel</div>
+      <div class="hs">วิทยาลัยเทคนิคประจวบคีรีขันธ์</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="user-pill" onclick="logout()">
+      <i class="ti ti-logout" style="font-size:14px"></i> ออกจากระบบ
+    </div>
+  </header>
+
+  <div class="admin-wrap">
+    <div class="page-title"><i class="ti ti-users"></i> รายการผู้แจ้งซ่อมทั้งหมด</div>
+
+    <!-- stats -->
+    <div class="stats-grid">
+      <div class="sc">
+        <div class="si" style="background:#e8ecf7"><i class="ti ti-clipboard-list" style="color:var(--navy)"></i></div>
+        <div><div class="sn" id="st-all" style="color:var(--navy)">0</div><div class="slb">ทั้งหมด</div></div>
+      </div>
+      <div class="sc">
+        <div class="si" style="background:var(--warn-bg)"><i class="ti ti-clock-hour-4" style="color:var(--warn-text)"></i></div>
+        <div><div class="sn" id="st-pend" style="color:var(--warn-text)">0</div><div class="slb">รอดำเนินการ</div></div>
+      </div>
+      <div class="sc">
+        <div class="si" style="background:var(--info-bg)"><i class="ti ti-tools" style="color:var(--info-text)"></i></div>
+        <div><div class="sn" id="st-prog" style="color:var(--info-text)">0</div><div class="slb">กำลังซ่อม</div></div>
+      </div>
+      <div class="sc">
+        <div class="si" style="background:var(--ok-bg)"><i class="ti ti-circle-check" style="color:var(--ok-text)"></i></div>
+        <div><div class="sn" id="st-done" style="color:var(--ok-text)">0</div><div class="slb">เสร็จสิ้น</div></div>
+      </div>
+    </div>
+
+    <!-- search -->
+    <div class="search-row">
+      <i class="ti ti-search" style="color:var(--hint);font-size:18px"></i>
+      <input type="text" id="q" placeholder="ค้นหาชื่อผู้แจ้ง, แผนก, อุปกรณ์..." oninput="renderAdmin()">
+      <select id="fs" onchange="renderAdmin()">
+        <option value="all">ทุกสถานะ</option>
+        <option value="pending">รอดำเนินการ</option>
+        <option value="progress">กำลังซ่อม</option>
+        <option value="done">เสร็จสิ้น</option>
+        <option value="cancel">ยกเลิก</option>
+      </select>
+      <select id="fd" onchange="renderAdmin()">
+        <option value="all">ทุกแผนก</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">
+        <i class="ti ti-download"></i> CSV
+      </button>
+    </div>
+
+    <!-- table -->
+    <div class="tbl-wrap">
+      <div style="overflow-x:auto">
+        <table class="adm-table" id="adm-table">
+          <thead>
+            <tr>
+              <th onclick="srt('id')">รหัส ↕</th>
+              <th onclick="srt('date')">วันที่ ↕</th>
+              <th>ผู้แจ้ง</th>
+              <th>แผนก</th>
+              <th>อุปกรณ์</th>
+              <th>ประเภท</th>
+              <th>เร่งด่วน</th>
+              <th>สถานะ</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="adm-tbody"></tbody>
+        </table>
+      </div>
+      <div id="adm-empty" class="empty" style="display:none">
+        <i class="ti ti-inbox"></i>ยังไม่มีคำร้องแจ้งซ่อม
+      </div>
+    </div>
+
+    <!-- detail panel -->
+    <div class="detail-panel" id="detail-panel" style="display:none">
+      <div class="dp-head">
+        <strong style="font-size:15px">รายละเอียดคำร้อง</strong>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('detail-panel').style.display='none'">
+          <i class="ti ti-x"></i> ปิด
+        </button>
+      </div>
+      <div id="detail-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!--  SCREEN 5 : TRACK STATUS                                     -->
+<!-- ============================================================ -->
+<div id="sc-track" class="screen">
+  <header class="app-header">
+    <div class="lbox"><i class="ti ti-tool"></i></div>
+    <div>
+      <div class="ht">ติดตามสถานะการซ่อม</div>
+      <div class="hs">วิทยาลัยเทคนิคประจวบคีรีขันธ์</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="user-pill" onclick="logout()">
+      <i class="ti ti-user-circle"></i>
+      <span id="hd-name-track">-</span>
+      <i class="ti ti-logout" style="font-size:14px;opacity:.7"></i>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- ค้นหา -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-map-search"></i> ติดตามสถานะคำร้อง</div>
+      <div class="track-search-box">
+        <input type="text" id="track-q" placeholder="ค้นหาด้วยรหัส REP-XXXX หรือชื่ออุปกรณ์..." oninput="renderTrack()">
+        <button class="btn btn-primary" onclick="renderTrack()"><i class="ti ti-search"></i></button>
+      </div>
+      <p style="font-size:12px;color:var(--muted)">แสดงเฉพาะคำร้องของ <strong id="track-username">-</strong></p>
+    </div>
+
+    <!-- รายการ detail (เมื่อกด) -->
+    <div id="track-detail" class="track-detail-card">
+      <button class="back-btn" onclick="closeTrackDetail()"><i class="ti ti-arrow-left"></i> กลับรายการ</button>
+      <div id="track-detail-body"></div>
+    </div>
+
+    <!-- รายการคำร้อง -->
+    <div id="track-list"></div>
+    <div id="track-empty" class="no-result" style="display:none">
+      <i class="ti ti-search-off"></i>ไม่พบคำร้องที่ค้นหา
+    </div>
+  </div>
+</div>
+
+<!-- MODAL อัปเดตสถานะ -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>อัปเดตสถานะ</h3>
+      <button onclick="closeModal()">&times;</button>
+    </div>
+    <div id="modal-body"></div>
+    <div style="display:flex;gap:10px;margin-top:1.25rem">
+      <button class="btn btn-outline" onclick="closeModal()" style="flex:1">ยกเลิก</button>
+      <button class="btn btn-green" onclick="saveStatus()" style="flex:1">
+        <i class="ti ti-check"></i> บันทึก
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <i class="ti ti-circle-check" style="font-size:18px"></i>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+/* ============================================================ */
+/*  CONSTANTS & STATE                                           */
+/* ============================================================ */
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'admin1234';
+
+const SL = { pending:'รอดำเนินการ', progress:'กำลังซ่อม', done:'เสร็จสิ้น', cancel:'ยกเลิก' };
+const SC = { pending:'b-pending', progress:'b-progress', done:'b-done', cancel:'b-cancel' };
+const PL = { low:'ปกติ', medium:'ด่วน', high:'เร่งด่วนมาก' };
+const PC = { low:'b-low', medium:'b-medium', high:'b-high' };
+const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+let mode     = 'user';
+let curUser  = {};
+let tickets  = [];          // ← ตัวนี้เก็บคำร้องทั้งหมด
+let nextId   = 1;
+let editId   = null;
+let sortSt   = { key:'id', asc:false };
+let imgs     = [];
+
+/* ============================================================ */
+/*  SCREEN                                                      */
+/* ============================================================ */
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ============================================================ */
+/*  LOGIN                                                       */
+/* ============================================================ */
+function setMode(m, el){
+  mode = m;
+  document.querySelectorAll('.ltab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('user-fields').style.display  = m==='user'  ? '' : 'none';
+  document.getElementById('admin-fields').style.display = m==='admin' ? '' : 'none';
+  document.getElementById('login-err').style.display = 'none';
+}
+
+function doLogin(){
+  const err = document.getElementById('login-err');
+  err.style.display = 'none';
+
+  if(mode === 'user'){
+    const name  = document.getElementById('u-name').value.trim();
+    const dept  = document.getElementById('u-dept').value;
+    if(!name || !dept){ err.textContent='กรุณากรอกชื่อและเลือกแผนก'; err.style.display='block'; return; }
+    curUser = { name, dept, phone: document.getElementById('u-phone').value.trim() };
+    document.getElementById('hd-name').textContent = name;
+    document.getElementById('d-name').value  = name;
+    document.getElementById('d-dept').value  = dept;
+    document.getElementById('d-phone').value = curUser.phone || '-';
+    show('sc-form');
+  } else {
+    const u = document.getElementById('a-user').value.trim();
+    const p = document.getElementById('a-pass').value;
+    if(u !== ADMIN_USER || p !== ADMIN_PASS){
+      err.textContent='username หรือ password ไม่ถูกต้อง'; err.style.display='block'; return;
+    }
+    show('sc-admin');
+    renderAdmin();
+  }
+}
+
+function logout(){
+  curUser = {}; imgs = [];
+  document.getElementById('u-name').value  = '';
+  document.getElementById('u-dept').value  = '';
+  document.getElementById('u-phone').value = '';
+  document.getElementById('a-user').value  = '';
+  document.getElementById('a-pass').value  = '';
+  clearForm();
+  show('sc-login');
+}
+
+/* ============================================================ */
+/*  USER FORM                                                   */
+/* ============================================================ */
+function submitForm(){
+  const equip = document.getElementById('f-equip').value.trim();
+  const desc  = document.getElementById('f-desc').value.trim();
+  if(!equip || !desc){ toast('กรุณากรอกชื่ออุปกรณ์และอาการเสียให้ครบ'); return; }
+
+  const now  = new Date();
+  const date = `${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()+543}`;
+  const time = `${pad(now.getHours())}:${pad(now.getMinutes())} น.`;
+  const id   = 'REP-' + String(nextId++).padStart(4,'0');
+  const type     = document.getElementById('f-type').value || 'ไม่ระบุ';
+  const priority = document.getElementById('f-priority').value;
+
+  // ✅ บันทึกลง tickets — Admin จะเห็นทันที
+  tickets.unshift({
+    id, date, time,
+    reporter: curUser.name,
+    phone:    curUser.phone || '-',
+    dept:     curUser.dept,
+    title:    equip,
+    type, priority, desc,
+    status:   'pending'
+  });
+
+  // แสดงหน้า success
+  document.getElementById('s-tid').textContent = id;
+  document.getElementById('s-sum').innerHTML = [
+    ['ผู้แจ้ง',        curUser.name],
+    ['แผนก',          curUser.dept],
+    ['เบอร์โทร',      curUser.phone || '-'],
+    ['อุปกรณ์',       equip],
+    ['ประเภท',        type],
+    ['ความเร่งด่วน',  PL[priority]],
+    ['วันที่แจ้ง',    `${date} ${time}`],
+  ].map(([l,v])=>`<div class="sum-row"><span class="sl">${l}</span><span class="sv">${v}</span></div>`).join('');
+
+  clearForm();
+  show('sc-success');
+}
+
+function clearForm(){
+  ['f-equip','f-desc'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('f-type').value     = '';
+  document.getElementById('f-priority').value = 'low';
+  imgs = [];
+  document.getElementById('preview-grid').innerHTML = '';
+}
+
+function goNewForm(){ show('sc-form'); }
+
+/* ============================================================ */
+/*  TRACK STATUS                                                */
+/* ============================================================ */
+function goTrack(){
+  document.getElementById('hd-name-track').textContent = curUser.name;
+  document.getElementById('track-username').textContent = curUser.name;
+  document.getElementById('track-q').value = '';
+  document.getElementById('track-detail').style.display = 'none';
+  show('sc-track');
+  renderTrack();
+}
+
+function renderTrack(){
+  const q = (document.getElementById('track-q').value || '').toLowerCase().trim();
+  const myTickets = tickets.filter(t =>
+    t.reporter === curUser.name &&
+    (!q || t.id.toLowerCase().includes(q) || t.title.toLowerCase().includes(q) || t.dept.toLowerCase().includes(q))
+  );
+
+  const listEl  = document.getElementById('track-list');
+  const emptyEl = document.getElementById('track-empty');
+
+  if(!myTickets.length){
+    listEl.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  listEl.innerHTML = myTickets.map(t => `
+    <div class="ticket-card" onclick="showTrackDetail('${t.id}')">
+      <div class="tc-head">
+        <div>
+          <div class="tc-id">${t.id}</div>
+          <div class="tc-meta"><i class="ti ti-calendar" style="font-size:11px"></i> ${t.date} ${t.time}</div>
+        </div>
+        <span class="badge ${SC[t.status]}">${SL[t.status]}</span>
+      </div>
+      <div class="tc-title">${t.title}</div>
+      <div class="tc-desc">${t.desc}</div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+        <span class="badge ${PC[t.priority]}">${PL[t.priority]}</span>
+        <span style="font-size:12px;color:var(--muted)"><i class="ti ti-building" style="font-size:11px"></i> ${t.dept}</span>
+      </div>
+    </div>`).join('');
+}
+
+function showTrackDetail(id){
+  const t = tickets.find(x => x.id === id);
+  if(!t) return;
+
+  // Timeline steps
+  const steps = [
+    { key:'pending',  label:'รับคำร้องแล้ว',    icon:'ti-clipboard-check', sub:`แจ้งเมื่อ ${t.date} ${t.time}` },
+    { key:'progress', label:'กำลังดำเนินการซ่อม', icon:'ti-tools',          sub:'ช่างได้รับมอบหมายงานแล้ว' },
+    { key:'done',     label:'ซ่อมเสร็จเรียบร้อย', icon:'ti-circle-check',   sub:'งานซ่อมเสร็จสมบูรณ์' },
+  ];
+  const order = ['pending','progress','done','cancel'];
+  const cur   = order.indexOf(t.status);
+
+  const tlHtml = t.status === 'cancel'
+    ? `<div class="tl-item">
+        <div class="tl-dot" style="background:#f1efe8;color:#5f5e5a"><i class="ti ti-ban"></i></div>
+        <div class="tl-content"><div class="tl-label">ยกเลิกคำร้อง</div><div class="tl-sub">คำร้องนี้ถูกยกเลิก</div></div>
+       </div>`
+    : steps.map((s, i) => {
+        const sIdx = order.indexOf(s.key);
+        let cls = sIdx < cur ? 'done' : sIdx === cur ? 'active' : 'wait';
+        return `<div class="tl-item">
+          <div class="tl-line"></div>
+          <div class="tl-dot ${cls}"><i class="ti ${s.icon}"></i></div>
+          <div class="tl-content">
+            <div class="tl-label" style="${cls==='wait'?'color:var(--hint)':''}">${s.label}</div>
+            <div class="tl-sub">${cls!=='wait' ? s.sub : 'รอดำเนินการ'}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+  document.getElementById('track-detail-body').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div>
+        <div style="font-weight:700;color:var(--navy);font-size:18px">${t.id}</div>
+        <div style="font-size:12px;color:var(--muted)">${t.date} ${t.time}</div>
+      </div>
+      <span class="badge ${SC[t.status]}">${SL[t.status]}</span>
+    </div>
+    <div class="detail-grid" style="margin-bottom:1rem">
+      <div class="di"><div class="dl">อุปกรณ์</div><div class="dv">${t.title}</div></div>
+      <div class="di"><div class="dl">ประเภท</div><div class="dv">${t.type}</div></div>
+      <div class="di"><div class="dl">ความเร่งด่วน</div><div class="dv"><span class="badge ${PC[t.priority]}">${PL[t.priority]}</span></div></div>
+      <div class="di"><div class="dl">แผนก</div><div class="dv">${t.dept}</div></div>
+    </div>
+    <div class="dl" style="font-size:12px;color:var(--muted);margin-bottom:6px">อาการเสีย / รายละเอียด</div>
+    <div class="desc-box" style="margin-bottom:1.25rem">${t.desc}</div>
+    <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:.75rem">ความคืบหน้า</div>
+    <div class="timeline">${tlHtml}</div>`;
+
+  const detailEl = document.getElementById('track-detail');
+  detailEl.style.display = 'block';
+  detailEl.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function closeTrackDetail(){
+  document.getElementById('track-detail').style.display = 'none';
+}
+
+/* ============================================================ */
+/*  IMAGE UPLOAD                                                */
+/* ============================================================ */
+function handleImg(e){
+  Array.from(e.target.files).slice(0,5-imgs.length).forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{ imgs.push(ev.target.result); renderPrev(); };
+    r.readAsDataURL(f);
+  });
+}
+function renderPrev(){
+  document.getElementById('preview-grid').innerHTML = imgs.map((src,i)=>
+    `<div class="prev-item"><img src="${src}"><button class="del" onclick="delImg(${i})">✕</button></div>`
+  ).join('');
+}
+function delImg(i){ imgs.splice(i,1); renderPrev(); }
+
+/* ============================================================ */
+/*  ADMIN                                                       */
+/* ============================================================ */
+function renderAdmin(){
+  // stats
+  document.getElementById('st-all').textContent  = tickets.length;
+  document.getElementById('st-pend').textContent = tickets.filter(t=>t.status==='pending').length;
+  document.getElementById('st-prog').textContent = tickets.filter(t=>t.status==='progress').length;
+  document.getElementById('st-done').textContent = tickets.filter(t=>t.status==='done').length;
+
+  // dept filter
+  const depts  = [...new Set(tickets.map(t=>t.dept))];
+  const dSel   = document.getElementById('fd');
+  const dCur   = dSel.value;
+  dSel.innerHTML = '<option value="all">ทุกแผนก</option>' +
+    depts.map(d=>`<option value="${d}" ${d===dCur?'selected':''}>${d}</option>`).join('');
+
+  const q  = (document.getElementById('q').value||'').toLowerCase();
+  const fs = document.getElementById('fs').value;
+  const fd = dSel.value;
+
+  let list = tickets.filter(t=>
+    (fs==='all'||t.status===fs) &&
+    (fd==='all'||t.dept===fd) &&
+    (!q||t.id.toLowerCase().includes(q)||t.title.includes(q)||t.reporter.includes(q)||t.dept.includes(q))
+  );
+
+  list.sort((a,b)=>{
+    const av=a[sortSt.key]||'', bv=b[sortSt.key]||'';
+    return sortSt.asc ? av.localeCompare(bv,'th') : bv.localeCompare(av,'th');
+  });
+
+  const tbody = document.getElementById('adm-tbody');
+  const empty = document.getElementById('adm-empty');
+  const tbl   = document.getElementById('adm-table');
+
+  if(!list.length){
+    tbody.innerHTML=''; tbl.style.display='none'; empty.style.display='block'; return;
+  }
+  tbl.style.display=''; empty.style.display='none';
+
+  tbody.innerHTML = list.map(t=>`
+    <tr>
+      <td><span style="font-weight:700;color:var(--navy)">${t.id}</span></td>
+      <td style="white-space:nowrap;color:var(--muted);font-size:12px">${t.date}<br>${t.time}</td>
+      <td>
+        <div class="rep-name">${t.reporter}</div>
+        <div class="rep-phone"><i class="ti ti-phone" style="font-size:11px"></i> ${t.phone}</div>
+      </td>
+      <td style="font-size:13px">${t.dept}</td>
+      <td style="font-weight:500">${t.title}</td>
+      <td style="font-size:12px;color:var(--muted)">${t.type}</td>
+      <td><span class="badge ${PC[t.priority]}">${PL[t.priority]}</span></td>
+      <td><span class="badge ${SC[t.status]}">${SL[t.status]}</span></td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-outline btn-sm" onclick="showDetail('${t.id}')" title="ดูรายละเอียด"><i class="ti ti-eye"></i></button>
+          <button class="btn btn-outline btn-sm" onclick="openModal('${t.id}')" title="อัปเดตสถานะ"><i class="ti ti-refresh"></i></button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function srt(key){
+  sortSt = { key, asc: sortSt.key===key ? !sortSt.asc : false };
+  renderAdmin();
+}
+
+function showDetail(id){
+  const t = tickets.find(x=>x.id===id);
+  document.getElementById('detail-body').innerHTML = `
+    <div class="detail-grid">
+      <div class="di"><div class="dl">รหัสคำร้อง</div><div class="dv" style="font-weight:700;color:var(--navy)">${t.id}</div></div>
+      <div class="di"><div class="dl">วันที่-เวลาแจ้ง</div><div class="dv">${t.date} ${t.time}</div></div>
+      <div class="di"><div class="dl">ผู้แจ้ง</div><div class="dv">${t.reporter}</div></div>
+      <div class="di"><div class="dl">เบอร์โทร</div><div class="dv">${t.phone}</div></div>
+      <div class="di"><div class="dl">แผนก</div><div class="dv">${t.dept}</div></div>
+      <div class="di"><div class="dl">อุปกรณ์</div><div class="dv">${t.title}</div></div>
+      <div class="di"><div class="dl">ประเภท</div><div class="dv">${t.type}</div></div>
+      <div class="di"><div class="dl">ความเร่งด่วน / สถานะ</div>
+        <div class="dv">
+          <span class="badge ${PC[t.priority]}">${PL[t.priority]}</span>
+          &nbsp;<span class="badge ${SC[t.status]}">${SL[t.status]}</span>
+        </div>
+      </div>
+    </div>
+    <div class="dl" style="font-size:12px;color:var(--muted);margin-bottom:6px">อาการเสีย / รายละเอียด</div>
+    <div class="desc-box">${t.desc}</div>
+    <div style="margin-top:1rem">
+      <button class="btn btn-primary btn-sm" onclick="openModal('${t.id}')">
+        <i class="ti ti-refresh"></i> อัปเดตสถานะ
+      </button>
+    </div>`;
+  const p = document.getElementById('detail-panel');
+  p.style.display='block';
+  p.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ============================================================ */
+/*  MODAL อัปเดตสถานะ                                          */
+/* ============================================================ */
+function openModal(id){
+  editId = id;
+  const t = tickets.find(x=>x.id===id);
+  document.getElementById('modal-body').innerHTML = `
+    <p style="font-size:14px;color:var(--muted);margin-bottom:1rem">
+      <strong>${t.id}</strong> — ${t.title}
+    </p>
+    <div class="field">
+      <label>สถานะใหม่</label>
+      <select id="ns" style="width:100%">
+        <option value="pending"  ${t.status==='pending' ?'selected':''}>รอดำเนินการ</option>
+        <option value="progress" ${t.status==='progress'?'selected':''}>กำลังซ่อม</option>
+        <option value="done"     ${t.status==='done'    ?'selected':''}>เสร็จสิ้น</option>
+        <option value="cancel"   ${t.status==='cancel'  ?'selected':''}>ยกเลิก</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>หมายเหตุ (ถ้ามี)</label>
+      <textarea id="nt" placeholder="เช่น รอรับอะไหล่ / ซ่อมเสร็จแล้ว" style="min-height:70px"></textarea>
+    </div>`;
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(e){
+  if(e && e.target !== document.getElementById('modal')) return;
+  document.getElementById('modal').classList.remove('open');
+}
+
+function saveStatus(){
+  const t = tickets.find(x=>x.id===editId);
+  if(t) t.status = document.getElementById('ns').value;
+  document.getElementById('modal').classList.remove('open');
+  renderAdmin();
+  toast(`อัปเดตสถานะ ${editId} แล้ว`);
+}
+
+/* ============================================================ */
+/*  EXPORT CSV                                                  */
+/* ============================================================ */
+function exportCSV(){
+  if(!tickets.length){ toast('ยังไม่มีข้อมูล'); return; }
+  const header = ['รหัส','วันที่','เวลา','ผู้แจ้ง','เบอร์โทร','แผนก','อุปกรณ์','ประเภท','ความเร่งด่วน','สถานะ','รายละเอียด'];
+  const rows = tickets.map(t=>[
+    t.id,t.date,t.time,t.reporter,t.phone,t.dept,t.title,
+    t.type,PL[t.priority],SL[t.status],
+    '"'+(t.desc||'').replace(/"/g,'""')+'"'
+  ]);
+  const csv = '\uFEFF'+[header,...rows].map(r=>r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = 'repair_report.csv';
+  a.click();
+  toast('ส่งออก CSV เรียบร้อยแล้ว');
+}
+
+/* ============================================================ */
+/*  UTILS                                                       */
+/* ============================================================ */
+function pad(n){ return String(n).padStart(2,'0'); }
+
+function toast(msg){
+  const el = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
